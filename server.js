@@ -162,14 +162,6 @@ app.post("/Signup", async (req, res) => {
         "your_secret_key",
         { expiresIn: "30d",}
       );
-      // res.cookie("jwt", token, {
-      //   expires: new Date(Date.now() + 3600000),
-      //   httpOnly: true,
-      // });
-      // Set token in an HTTP-only cookie
-        // res.cookie('token', token, { httpOnly: true, expiresIn: 30 * 24 * 60 * 60 * 1000 }); // 30 days expiration
-      // newUser.token = token;
-      // await newUser.save();
       res.json({ token,newUser: newUser._id , role:newUser.role,  message: "Signup successfully" });
     }
   } catch (error) {
@@ -183,7 +175,6 @@ app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
-    // console.log('userlogin',user.id);
     if (!user) {
       return res.status(401).json({ message: "Invalid credential " });
     } else { 
@@ -194,15 +185,10 @@ app.post("/login", async (req, res) => {
       }
       // Generate JWT Token
       const token = jwt.sign(
-        // { userId: user._id, email: user.email },
         { id: user._id, email: user.email, },
         "your_secret_key",
         { expiresIn: "30d",}
       );
-        // Set token in an HTTP-only cookie
-        // res.cookie('token', token, { httpOnly: true, expiresIn: 30 * 24 * 60 * 60 * 1000 }); // 30 days expiration
-      // user.token = token;
-      // await user.save();
       res.status(200).json({id: user._id,role: user.role,token });
     }
   } catch (error) {
@@ -231,7 +217,6 @@ app.get("/auth/check", authenticateToken, async (req, res) => {
 // fetch user
 app.get("/users/own",authenticateToken,async(req, res)=>{
   const {id} = req.user;
-  // console.log(id)
     try {
         const user = await User.findById(id);
         res.status(200).json({id:user.id, addresses:user.addresses, email:user.email, role:user.role})
@@ -245,7 +230,6 @@ app.get("/users/own",authenticateToken,async(req, res)=>{
 app.post("/updateUser/:id",async(req, res)=>{
   const {id} = req.params;
   const addresses = req.body
-  // console.log('addresses',addresses)
   try {
     const user = await User.findByIdAndUpdate(id,addresses, {new:true});
       res.status(200).json(user)
@@ -316,10 +300,7 @@ app.get("/products/:id", async (req, res) => {
 
 // Endpoint to add a product to the cart
 app.post("/api/cart/add", async (req, res) => {
-  // const { products:{title,description, price, discountPercentage, rating, stock, brand, category,thumbnail, images}, userId, quantity } = req.body;
   const { product, userId, quantity } = req.body;
-  // const id= req.params.id
-  // console.log('product',id);
   try {
     const cartItem = new CartItem({
       product,
@@ -328,7 +309,6 @@ app.post("/api/cart/add", async (req, res) => {
     });
 
    const result = await cartItem.save();
-    // const result = await item.populate("product");
     res.status(201).json({ message: "Product added to the cart", result });
   } catch (error) {
     if (error instanceof mongoose.Error.ValidationError) {
@@ -364,7 +344,6 @@ app.get("/api/cart/:id", async (req, res) => {
   try {
     const cartItems = await CartItem.find({ userId: id })
     .populate("product");
-    // console.log('cartItems',cartItems)
     res.status(200).json(cartItems);
   } catch (error) {
     console.error("Error fetching cart items:", error);
@@ -401,23 +380,11 @@ app.get("/protected-route", authenticateToken, (req, res) => {
   res.json({ Message: "This is a Protected Route", userId, userEmail });
 });
 
-
-// checkout api
-// const calculateOrderAmount = (items) => {
-//   // Replace this constant with a calculation of the order's amount
-//   // Calculate the order total on the server to prevent
-//   // people from directly manipulating the amount on the client
-//   return 1400;
-// };
-
 app.post("/create-payment-intent", async (req, res) => {
   const { totalAmount } = req.body;
-  // const { items } = req.body;
-  // console.log(totalAmount)
 
   // Create a PaymentIntent with the order amount and currency
   const paymentIntent = await stripe.paymentIntents.create({
-    // amount: calculateOrderAmount(items),
     amount: Math.round(totalAmount * 100), // Amount in cents,
     currency: "inr",
     // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
