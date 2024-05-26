@@ -4,10 +4,48 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const bcrypt = require('bcrypt');
-const stripe = require("stripe")("sk_test_51OsUBIDflVYbhFY6omWgn8NOBTX5kB5lqmuP4h1N0QUME7BD4YHMNOjco9GE0E8LCeWoAnZcx2WbfpFvT5eaEXj60008PYCfol");
+const bcrypt = require("bcrypt");
+const stripe = require("stripe")(
+  "sk_test_51OsUBIDflVYbhFY6omWgn8NOBTX5kB5lqmuP4h1N0QUME7BD4YHMNOjco9GE0E8LCeWoAnZcx2WbfpFvT5eaEXj60008PYCfol"
+);
 
 const app = express();
+const endpointSecret = "whsec_kvAsWs6u3Pwn2RQ2Z5e4ui0BdOxsFYqU"
+
+app.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  async (request, response) => {
+    const sig = request.headers["stripe-signature"];
+
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+    } catch (err) {
+      response.status(400).send(`Webhook Error: ${err.message}`);
+      return;
+    }
+
+    //Handle the event
+    switch (event.type) {
+      case "payment_intent.succeeded":
+        const paymentIntentSucceeded = event.data.object;
+        // console.log(paymentIntentSucceeded);
+        const order = await Order.findById(paymentIntentSucceeded.metadata.orderId);
+        order.paymentStatus = 'received';
+        await order.save();
+        // Then define and call a function to handle the event payment_intent.succeeded
+        break;
+      // ... handle other event types
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    // Return a 200 response to acknowledge receipt of the event
+    response.send();
+  }
+);
 const PORT = 3005;
 
 //data connection
@@ -29,10 +67,10 @@ app.use(bodyParser.json());
 //create model for signUp
 const User = mongoose.model("User", {
   name: String,
-  email: String,
-  password: String,
-  role: { type: String, required: true, default: "user" },
-  token: String,
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, default: "user" },
+  bio:String,
   addresses: { type: [Schema.Types.Mixed] },
 });
 //create model
@@ -45,39 +83,38 @@ const User = mongoose.model("User", {
 // });
 
 const Product = mongoose.model("Product", {
-    title: {
-      type: String,
-    },
-    description: {
-      type: String,
-    },
-    price: {
-      type: Number,
-    },
-    discountPercentage: {
-      type: Number,
-    },
-    rating: {
-      type: Number,
-    },
-    stock: {
-      type: Number,
-    },
-    brand: {
-      type: String,
-    },
-    category: {
-      type: String,
-    },
-    thumbnail: {
-      type: String,
-    },
-    images: {
-      type: [String], // Array of strings representing image URLs
-      default: [], // Default is an empty array
-    },
-  }
-);
+  title: {
+    type: String,
+  },
+  description: {
+    type: String,
+  },
+  price: {
+    type: Number,
+  },
+  discountPercentage: {
+    type: Number,
+  },
+  rating: {
+    type: Number,
+  },
+  stock: {
+    type: Number,
+  },
+  brand: {
+    type: String,
+  },
+  category: {
+    type: String,
+  },
+  thumbnail: {
+    type: String,
+  },
+  images: {
+    type: [String], // Array of strings representing image URLs
+    default: [], // Default is an empty array
+  },
+});
 
 const CartItem = mongoose.model("CartItem", {
   // products: {
@@ -114,8 +151,20 @@ const CartItem = mongoose.model("CartItem", {
   //   },
   // },
   userId: String,
-  product:{type: Schema.Types.ObjectId, ref: 'Product', required:true},
+  product: { type: Schema.Types.ObjectId, ref: "Product", required: true },
   quantity: Number,
+});
+
+// Orders model
+const Order = mongoose.model("Order", {
+  items: { type: [Schema.Types.Mixed] },
+  totalAmount: { type: Number },
+  totalItems: { type: Number },
+  user: { type: Schema.Types.ObjectId, ref: "User" },
+  paymentMethod: { type: String, required: true },
+  // paymentStatus: { type: String, default: "pending" },
+  status: { type: String, default: "pending" },
+  selectedAddress: { type: Schema.Types.Mixed, required: true },
 });
 
 // middleware for authentication
@@ -139,30 +188,38 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// remove tailwind css get css
+// className={userOrdersStyle.}
+
 app.post("/Signup", async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, bio } = req.body;
 
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       console.log("User Already Registered");
-      res.json({ message: "User Already Registered" });
+      // res.json({ message: "User Already Registered" });
+      return res.status(409).json({ message: "User Already Registered" });
     } else {
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-       // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+      // Create new user
+      const newUser = new User({ name, email, bio, password: hashedPassword });
+      await newUser.save();
 
-    // Create new user
-    const newUser = new User({ name, email, password: hashedPassword });
-    await newUser.save();
-
-       // Generate JWT Token
-       const token = jwt.sign(
+      // Generate JWT Token
+      const token = jwt.sign(
         { userId: newUser._id, email: newUser.email },
         "your_secret_key",
-        { expiresIn: "30d",}
+        { expiresIn: "30d" }
       );
-      res.json({ token,newUser: newUser._id , role:newUser.role,  message: "Signup successfully" });
+      res.json({
+        token,
+        newUser: newUser._id,
+        role: newUser.role,
+        message: "Signup successfully",
+      });
     }
   } catch (error) {
     console.error("Error during signup", error);
@@ -177,7 +234,7 @@ app.post("/login", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: "Invalid credential " });
-    } else { 
+    } else {
       // Compare passwords
       const passwordMatch = await bcrypt.compare(password, user.password);
       if (!passwordMatch) {
@@ -185,11 +242,11 @@ app.post("/login", async (req, res) => {
       }
       // Generate JWT Token
       const token = jwt.sign(
-        { id: user._id, email: user.email, },
+        { id: user._id, email: user.email },
         "your_secret_key",
-        { expiresIn: "30d",}
+        { expiresIn: "30d" }
       );
-      res.status(200).json({id: user._id,role: user.role,token });
+      res.status(200).json({ id: user._id, role: user.role, token });
     }
   } catch (error) {
     console.error(error);
@@ -198,46 +255,53 @@ app.post("/login", async (req, res) => {
 });
 
 app.get("/auth/check", authenticateToken, async (req, res) => {
-// // // try{
-//  const userId = req.user.userId;
-//   const userEmail = req.user.email;
-//   res.json({ Message: "This is a Protected Route", userId, userEmail });
+  // // // try{
+  //  const userId = req.user.userId;
+  //   const userEmail = req.user.email;
+  //   res.json({ Message: "This is a Protected Route", userId, userEmail });
 
-  const user = req.user
+  const user = req.user;
   // console.log('authTokenDATA',authenticateToken.authToken)
   // const user = await User.findById(req.user.userId);
   if (user) {
+    console.log(user)
     res.json(user);
   } else {
     res.sendStatus(401);
-  };
-
+  }
 });
 
 // fetch user
-app.get("/users/own",authenticateToken,async(req, res)=>{
-  const {id} = req.user;
-    try {
-        const user = await User.findById(id);
-        res.status(200).json({id:user.id, addresses:user.addresses, email:user.email, role:user.role})
-    } catch (err) {
-        res.status(400).json(err);
-    }
-
-})
+app.get("/users/own", authenticateToken, async (req, res) => {
+  const { id } = req.user;
+  try {
+    const user = await User.findById(id);
+    res
+      .status(200)
+      .json({
+        id: user.id,
+        name: user.name,
+        addresses: user.addresses,
+        email: user.email,
+        role: user.role,
+      });
+  } catch (err) {
+    res.status(400).json(err);
+  }
+});
 
 // Update User API
-app.post("/updateUser/:id",async(req, res)=>{
-  const {id} = req.params;
-  const addresses = req.body
+app.post("/updateUser/:id", async (req, res) => {
+  const { id } = req.params;
+  const addresses = req.body;
   try {
-    const user = await User.findByIdAndUpdate(id,addresses, {new:true});
-      res.status(200).json(user)
+    const user = await User.findByIdAndUpdate(id, addresses, { new: true });
+    res.status(200).json(user);
   } catch (error) {
-    res.status(400).json(error)
+    res.status(400).json(error);
   }
+});
 
-})
 
 
 app.post("/api/products", async (req, res) => {
@@ -302,14 +366,25 @@ app.get("/products/:id", async (req, res) => {
 app.post("/api/cart/add", async (req, res) => {
   const { product, userId, quantity } = req.body;
   try {
-    const cartItem = new CartItem({
-      product,
-      userId,
-      quantity,
-    });
-
-   const result = await cartItem.save();
+    // const existingCartItem = CartItem.find(
+    //   (item) => item.userId === userId && item.product === product
+    // );
+    // if(existingCartItem){
+    //   existingCartItem.quantity += quantity;
+    // res.status(200).json({ message: 'Product quantity updated in the cart', cart });
+    // }else{
+      const cartItem = new CartItem({
+        product,
+        userId,
+        quantity,
+      });
+      const result = await cartItem.save();
     res.status(201).json({ message: "Product added to the cart", result });
+    // }
+   
+    
+
+    
   } catch (error) {
     if (error instanceof mongoose.Error.ValidationError) {
       console.error("Validation Error:", error.errors);
@@ -335,15 +410,12 @@ app.post("/api/cart/add", async (req, res) => {
 //   }
 // });
 
-
-
-// cart get by id api 
+// cart get by id api
 app.get("/api/cart/:id", async (req, res) => {
   const id = req.params.id;
-  
+
   try {
-    const cartItems = await CartItem.find({ userId: id })
-    .populate("product");
+    const cartItems = await CartItem.find({ userId: id }).populate("product");
     res.status(200).json(cartItems);
   } catch (error) {
     console.error("Error fetching cart items:", error);
@@ -351,23 +423,77 @@ app.get("/api/cart/:id", async (req, res) => {
   }
 });
 
+// update cart
+app.patch('/cart/:id', async (req, res) => {
+  const { id } = req.params;
+  const { quantity } = req.body;
+
+  try {
+    const cartItem = await CartItem.findByIdAndUpdate(id, { quantity }, { new: true });
+    // const result = await cart.populate("product");
+    res.status(200).json(cartItem);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating quantity', error });
+  }
+});
+
+// Update Profile Route
+app.patch('/api/profile/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, email, bio } = req.body;
+
+  try {
+    const updatedProfile = await User.findByIdAndUpdate(id, { name, email, bio }, { new: true });
+    res.json(updatedProfile);
+  } catch (error) {
+    res.status(500).send({message: 'Error updating quantity',error});
+  }
+});
+
+
 // Route to remove an item from the cart
-app.delete('/api/cart/:id', async (req, res) => {
+app.delete("/api/cart/:id", async (req, res) => {
   const itemId = req.params.id;
 
   try {
     // Find the cart item by its ID and remove it
     const removedItem = await CartItem.findOneAndDelete({ _id: itemId });
 
-
-    if (removedItem) { 
-      res.status(200).json({ message: 'Item removed from cart successfully' });
+    if (removedItem) {
+      res.status(200).json({ message: "Item removed from cart successfully" });
     } else {
-      res.status(404).json({ message: 'Item not found in the cart' });
+      res.status(404).json({ message: "Item not found in the cart" });
     }
   } catch (error) {
-    console.error('Error removing item from cart:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Error removing item from cart:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// order api*************************
+app.post("/orders", async (req, res) => {
+  try {
+    const newOrder = new Order(req.body);
+    const doc = await newOrder.save();
+    res.status(201).json(doc);
+    // res.status(201).json({message:"order"});
+  } catch (error) {
+    console.log("Internal Server Error backend");
+    res.status(500).json({ message: "Internal Server Error", error });
+  }
+});
+
+app.get("/api/orders/:id", async (req, res) => {
+  const id = req.params.id;
+  // console.log("iddd",id);
+  try {
+    const orders = await Order.find({user:id});
+    // const doc = await newOrder.save();
+    res.status(200).json(orders);
+    // res.status(201).json({message:"order"});
+  } catch (error) {
+    console.log("Internal Server Error backend");
+    res.status(400).json({ message: "Internal Server Error", error });
   }
 });
 
@@ -381,19 +507,35 @@ app.get("/protected-route", authenticateToken, (req, res) => {
 });
 
 app.post("/create-payment-intent", async (req, res) => {
-  const { totalAmount } = req.body;
+  const { totalAmount, orderId } = req.body;
 
-  // Create a PaymentIntent with the order amount and currency
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: Math.round(totalAmount * 100), // Amount in cents,
-    currency: "inr",
-    // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
-    automatic_payment_methods: {
-      enabled: true,
-    },
-  });
+  // Define the minimum amount allowed for your currency (e.g., 50 cents for USD)
+  const minimumAmount = 50; // in cents
+  const currency = "inr"; // define your currency
 
-  res.send({
-    clientSecret: paymentIntent.client_secret,
-  });
+  if (totalAmount < minimumAmount / 100) {
+    return res.status(400).json({ message: `Amount must be at least ${minimumAmount / 100} ${currency}.` });
+  }
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(totalAmount * 100), // Amount in cents
+      currency: currency,
+      automatic_payment_methods: {
+        enabled: true,
+      },
+      metadata: {
+        orderId,
+      },
+    });
+
+    res.send({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (error) {
+    console.error("Error creating payment intent:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
 });
+
+
