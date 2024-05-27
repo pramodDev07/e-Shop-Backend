@@ -114,6 +114,10 @@ const Product = mongoose.model("Product", {
     type: [String], // Array of strings representing image URLs
     default: [], // Default is an empty array
   },
+  colors: { type: [Schema.Types.Mixed] },
+  sizes: { type: [Schema.Types.Mixed] },
+  highlights: { type: [String],default: [], },
+  deleted: { type: Boolean, default: false },
 });
 
 const CartItem = mongoose.model("CartItem", {
@@ -303,6 +307,26 @@ app.post("/updateUser/:id", async (req, res) => {
 });
 
 
+app.post("/products", async (req, res) => {
+  const product = req.body;
+  console.log(product.title);
+  
+  try {
+    const productData = await Product.findOne({ title: product.title });
+    if (productData) {
+      return res.status(409).json({ message: "Product Already Exists" });
+    }
+
+    const newProduct = new Product(product);
+    await newProduct.save();
+    return res.status(201).json({ message: "Product Saved Successfully" });
+
+  } catch (error) {
+    console.error("Error during Product operation:", error);
+    return res.status(500).json({ message: "Error during Post data on Product" });
+  }
+});
+
 
 app.post("/api/products", async (req, res) => {
   const {
@@ -359,6 +383,34 @@ app.get("/products/:id", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(404).json({ message: "Product not found" });
+  }
+});
+
+
+// update Product
+// app.patch('/products/:id', (req, res) => {
+//   const productIndex = products.findIndex(p => p.id === req.params.id);
+//   if (productIndex === -1) {
+//     return res.status(404).json({ message: 'Product not found' });
+//   }
+
+//   const updatedProduct = { ...products[productIndex], ...req.body };
+//   products[productIndex] = updatedProduct;
+//   res.json(updatedProduct);
+// });
+
+app.patch('/products/:id',async (req, res) => {
+   const id = req.params.id;
+  // console.log(id);
+  try {
+    const updatedProduct = await Product.findByIdAndUpdate(id, req.body, { new: true });
+    if (!updatedProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json(updatedProduct);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
