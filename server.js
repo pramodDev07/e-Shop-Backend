@@ -10,7 +10,7 @@ const stripe = require("stripe")(
 );
 
 const app = express();
-const endpointSecret = "whsec_kvAsWs6u3Pwn2RQ2Z5e4ui0BdOxsFYqU"
+const endpointSecret = "whsec_kvAsWs6u3Pwn2RQ2Z5e4ui0BdOxsFYqU";
 
 app.post(
   "/webhook",
@@ -32,8 +32,10 @@ app.post(
       case "payment_intent.succeeded":
         const paymentIntentSucceeded = event.data.object;
         // console.log(paymentIntentSucceeded);
-        const order = await Order.findById(paymentIntentSucceeded.metadata.orderId);
-        order.paymentStatus = 'received';
+        const order = await Order.findById(
+          paymentIntentSucceeded.metadata.orderId
+        );
+        order.paymentStatus = "received";
         await order.save();
         // Then define and call a function to handle the event payment_intent.succeeded
         break;
@@ -64,13 +66,31 @@ mongoose
 app.use(cors());
 app.use(bodyParser.json());
 
+app.use(
+  cors({
+    exposedHeaders: ["X-Total-Count"],
+  })
+);
+
+
+const CategorySchema = new mongoose.Schema({
+  category: { type: String, unique: true, required: true }
+});
+
+const BrandSchema = new mongoose.Schema({
+  brand: { type: String, unique: true, required: true }
+});
+
+const Category = mongoose.model("Category", CategorySchema);
+const Brand = mongoose.model("Brand", BrandSchema);
+
 //create model for signUp
 const User = mongoose.model("User", {
   name: String,
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, default: "user" },
-  bio:String,
+  bio: String,
   addresses: { type: [Schema.Types.Mixed] },
 });
 //create model
@@ -116,8 +136,9 @@ const Product = mongoose.model("Product", {
   },
   colors: { type: [Schema.Types.Mixed] },
   sizes: { type: [Schema.Types.Mixed] },
-  highlights: { type: [String],default: [], },
+  highlights: { type: [String], default: [] },
   deleted: { type: Boolean, default: false },
+  discountPrice: { type: Number },
 });
 
 const CartItem = mongoose.model("CartItem", {
@@ -160,16 +181,35 @@ const CartItem = mongoose.model("CartItem", {
 });
 
 // Orders model
-const Order = mongoose.model("Order", {
-  items: { type: [Schema.Types.Mixed] },
-  totalAmount: { type: Number },
-  totalItems: { type: Number },
-  user: { type: Schema.Types.ObjectId, ref: "User" },
-  paymentMethod: { type: String, required: true },
-  // paymentStatus: { type: String, default: "pending" },
-  status: { type: String, default: "pending" },
-  selectedAddress: { type: Schema.Types.Mixed, required: true },
-});
+// const Order = mongoose.model(
+//   "Order",
+//   {
+//     items: { type: [Schema.Types.Mixed] },
+//     totalAmount: { type: Number },
+//     totalItems: { type: Number },
+//     user: { type: Schema.Types.ObjectId, ref: "User" },
+//     paymentMethod: { type: String, required: true },
+//     // paymentStatus: { type: String, default: "pending" },
+//     status: { type: String, default: "pending" },
+//     selectedAddress: { type: Schema.Types.Mixed, required: true },
+//   },
+// );
+
+const orderSchema = new Schema(
+  {
+    items: { type: [Schema.Types.Mixed], required: true },
+    totalAmount: { type: Number, required: true },
+    totalItems: { type: Number, required: true },
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    paymentMethod: { type: String, required: true },
+    paymentStatus: { type: String, default: "pending" },
+    status: { type: String, default: "pending" },
+    selectedAddress: { type: Schema.Types.Mixed, required: true },
+  },
+  { timestamps: true }
+);
+
+const Order = mongoose.model("Order", orderSchema);
 
 // middleware for authentication
 const authenticateToken = (req, res, next) => {
@@ -268,7 +308,7 @@ app.get("/auth/check", authenticateToken, async (req, res) => {
   // console.log('authTokenDATA',authenticateToken.authToken)
   // const user = await User.findById(req.user.userId);
   if (user) {
-    console.log(user)
+    // console.log(user)
     res.json(user);
   } else {
     res.sendStatus(401);
@@ -280,15 +320,13 @@ app.get("/users/own", authenticateToken, async (req, res) => {
   const { id } = req.user;
   try {
     const user = await User.findById(id);
-    res
-      .status(200)
-      .json({
-        id: user.id,
-        name: user.name,
-        addresses: user.addresses,
-        email: user.email,
-        role: user.role,
-      });
+    res.status(200).json({
+      id: user.id,
+      name: user.name,
+      addresses: user.addresses,
+      email: user.email,
+      role: user.role,
+    });
   } catch (err) {
     res.status(400).json(err);
   }
@@ -306,27 +344,30 @@ app.post("/updateUser/:id", async (req, res) => {
   }
 });
 
-
 app.post("/products", async (req, res) => {
   const product = req.body;
-  console.log(product.title);
-  
+
   try {
-    const productData = await Product.findOne({ title: product.title });
-    if (productData) {
+    const newProduct = await Product.findOne({ title: product.title });
+    // console.log('newProduct',newProduct)
+    if (newProduct) {
       return res.status(409).json({ message: "Product Already Exists" });
     }
 
-    const newProduct = new Product(product);
-    await newProduct.save();
+    const newProducts = new Product(product);
+    newProducts.discountPrice = Math.round(
+      product.price * (1 - product.discountPercentage / 100)
+    );
+    console.log("newProducts", newProducts);
+    await newProducts.save();
     return res.status(201).json({ message: "Product Saved Successfully" });
-
   } catch (error) {
     console.error("Error during Product operation:", error);
-    return res.status(500).json({ message: "Error during Post data on Product" });
+    return res
+      .status(500)
+      .json({ message: "Error during Post data on Product" });
   }
 });
-
 
 app.post("/api/products", async (req, res) => {
   const {
@@ -361,15 +402,98 @@ app.post("/api/products", async (req, res) => {
 });
 
 // Product get api
+// app.get("/product", async (req, res) => {
+//   const condition = {};
+
+//   // Fetch the products with pagination
+//   let products = Product.find(condition);
+//   let totalProductQuery = Product.find(condition);
+
+
+//   if(req.query.selectedCategories){
+//     console.log('req.query.selectedCategories',req.query.selectedCategories)
+//     query = products.find({category: req.query.selectedCategories})
+//     totalProductQuery = totalProductQuery.find({category: req.query.selectedCategories})
+//  }
+//   if(req.query.selectedBrands){
+//     console.log('req.query.selectedBrands',req.query.selectedBrands)
+//     query = products.find({brand: req.query.selectedBrands})
+//     totalProductQuery = totalProductQuery.find({brand: req.query.selectedBrands})
+//  }
+//   if(req.query.minPrice){
+//     console.log('req.query.minPrice',req.query.minPrice)
+//     query = products.sort({price: req.query.minPrice})
+//     // totalProductQuery = totalProductQuery.sort({price: req.query.minPrice})
+//  }
+//   if(req.query.maxPrice){
+//     console.log('req.query.selectedBrands',req.query.maxPrice)
+//     query = products.sort({price: req.query.maxPrice})
+//     // totalProductQuery = totalProductQuery.sort({price: req.query.maxPrice})
+//  }
+
+// //  if(req.query.minPrice && req.query.maxPrice){
+// //   query = products.sort({[req.query.maxPrice]: req.query.maxPrice});
+// // }
+
+//   const totalDocs = await totalProductQuery.count().exec();
+
+//   if (req.query.page && req.query.limit) {
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     products = products.skip((page - 1) * limit).limit(limit);
+//   }
+//   try {
+//     const docs = await products.exec();
+//     res.set("X-Total-Count", totalDocs);
+//     res.json({ product: docs });
+//     // console.log('Headers:', res.getHeaders());
+//   } catch (error) {
+//     console.error(error);
+//     res.status(404).json({ message: "Product not found" });
+//   }
+// });
+
 app.get("/product", async (req, res) => {
   try {
-    const product = await Product.find();
-    res.json({ product });
+    // Build the query object based on the filters
+    const condition = {};
+
+    if (req.query.selectedCategories) {
+      const categories = req.query.selectedCategories.split(',');
+      condition.category = { $in: categories };
+    }
+
+    if (req.query.selectedBrands) {
+      const brands = req.query.selectedBrands.split(',');
+      condition.brand = { $in: brands };
+    }
+
+    if (req.query.minPrice) {
+      condition.price = { ...condition.price, $gte: parseFloat(req.query.minPrice) };
+    }
+
+    if (req.query.maxPrice) {
+      condition.price = { ...condition.price, $lte: parseFloat(req.query.maxPrice) };
+    }
+
+    // Fetch the products with pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const totalDocs = await Product.countDocuments(condition).exec();
+    const products = await Product.find(condition)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .exec();
+
+    res.set("X-Total-Count", totalDocs);
+    res.json({ product: products });
   } catch (error) {
     console.error(error);
-    res.status(404).json({ message: "Product not found" });
+    res.status(500).json({ message: "Error fetching products", error });
   }
 });
+
 
 // Product get with id Product Details api
 // Endpoint to get a specific product by ID
@@ -386,7 +510,6 @@ app.get("/products/:id", async (req, res) => {
   }
 });
 
-
 // update Product
 // app.patch('/products/:id', (req, res) => {
 //   const productIndex = products.findIndex(p => p.id === req.params.id);
@@ -399,18 +522,20 @@ app.get("/products/:id", async (req, res) => {
 //   res.json(updatedProduct);
 // });
 
-app.patch('/products/:id',async (req, res) => {
-   const id = req.params.id;
+app.patch("/products/:id", async (req, res) => {
+  const id = req.params.id;
   // console.log(id);
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(id, req.body, { new: true });
+    const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
     if (!updatedProduct) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ message: "Product not found" });
     }
     res.json(updatedProduct);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -425,18 +550,14 @@ app.post("/api/cart/add", async (req, res) => {
     //   existingCartItem.quantity += quantity;
     // res.status(200).json({ message: 'Product quantity updated in the cart', cart });
     // }else{
-      const cartItem = new CartItem({
-        product,
-        userId,
-        quantity,
-      });
-      const result = await cartItem.save();
+    const cartItem = new CartItem({
+      product,
+      userId,
+      quantity,
+    });
+    const result = await cartItem.save();
     res.status(201).json({ message: "Product added to the cart", result });
     // }
-   
-    
-
-    
   } catch (error) {
     if (error instanceof mongoose.Error.ValidationError) {
       console.error("Validation Error:", error.errors);
@@ -476,32 +597,39 @@ app.get("/api/cart/:id", async (req, res) => {
 });
 
 // update cart
-app.patch('/cart/:id', async (req, res) => {
+app.patch("/cart/:id", async (req, res) => {
   const { id } = req.params;
   const { quantity } = req.body;
 
   try {
-    const cartItem = await CartItem.findByIdAndUpdate(id, { quantity }, { new: true });
+    const cartItem = await CartItem.findByIdAndUpdate(
+      id,
+      { quantity },
+      { new: true }
+    );
     // const result = await cart.populate("product");
     res.status(200).json(cartItem);
   } catch (error) {
-    res.status(500).json({ message: 'Error updating quantity', error });
+    res.status(500).json({ message: "Error updating quantity", error });
   }
 });
 
 // Update Profile Route
-app.patch('/api/profile/:id', async (req, res) => {
+app.patch("/api/profile/:id", async (req, res) => {
   const { id } = req.params;
   const { name, email, bio } = req.body;
 
   try {
-    const updatedProfile = await User.findByIdAndUpdate(id, { name, email, bio }, { new: true });
+    const updatedProfile = await User.findByIdAndUpdate(
+      id,
+      { name, email, bio },
+      { new: true }
+    );
     res.json(updatedProfile);
   } catch (error) {
-    res.status(500).send({message: 'Error updating quantity',error});
+    res.status(500).send({ message: "Error updating quantity", error });
   }
 });
-
 
 // Route to remove an item from the cart
 app.delete("/api/cart/:id", async (req, res) => {
@@ -522,6 +650,25 @@ app.delete("/api/cart/:id", async (req, res) => {
   }
 });
 
+app.delete("/clear-cart/:id", async (req, res) => {
+  const { id } = req.params;
+  // console.log(id)
+  try {
+    const clearCart = await CartItem.deleteMany({ userId: id });
+    // const userId = req.body.userId; // Ensure you have the user ID to identify the user's cart
+
+    // await Cart.deleteMany({ userId });
+    if (clearCart) {
+      res.status(200).json({ message: "Cart cleared successfully" });
+    } else {
+      res.status(404).json({ message: "Item not found in the cart" });
+    }
+  } catch (error) {
+    console.error("Error clearing cart:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 // order api*************************
 app.post("/orders", async (req, res) => {
   try {
@@ -535,11 +682,42 @@ app.post("/orders", async (req, res) => {
   }
 });
 
+app.get("/orders", async (req, res) => {
+  try {
+    const orders = await Order.find();
+    res.json(orders);
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ message: "Error fetching orders" });
+  }
+});
+
+app.patch("/updateOrder/:id", async (req, res) => {
+  const { id } = req.params;
+  // console.log("Updating order with ID:", id);
+
+  try {
+    const updatedOrder = await Order.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // console.log("Order updated successfully:", updatedOrder);
+    res.json(updatedOrder);
+  } catch (error) {
+    console.error("Error updating order:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 app.get("/api/orders/:id", async (req, res) => {
   const id = req.params.id;
   // console.log("iddd",id);
   try {
-    const orders = await Order.find({user:id});
+    const orders = await Order.find({ user: id });
     // const doc = await newOrder.save();
     res.status(200).json(orders);
     // res.status(201).json({message:"order"});
@@ -548,6 +726,63 @@ app.get("/api/orders/:id", async (req, res) => {
     res.status(400).json({ message: "Internal Server Error", error });
   }
 });
+
+app.post("/category", async (req, res) => {
+  const { category } = req.body;
+
+  try {
+    let existingCategory = await Category.findOne({ category });
+    if (existingCategory) {
+      return res.status(409).json({ message: "Category already exists" });
+    }
+
+    const newCategory = new Category({ category });
+    await newCategory.save();
+    res.status(201).json({ message: "Category saved successfully", newCategory });
+  } catch (error) {
+    console.error("Error during category creation:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Endpoint to get all categories
+app.get('/categories', async (req, res) => {
+  try {
+    const categories = await Category.find();
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching categories', error });
+  }
+});
+
+app.post("/brand", async (req, res) => {
+  const { brand } = req.body;
+
+  try {
+    let existingBrand = await Brand.findOne({ brand });
+    if (existingBrand) {
+      return res.status(409).json({ message: "Brand already exists" });
+    }
+
+    const newBrand = new Brand({ brand});
+    await newBrand.save();
+    res.status(201).json({ message: "Brand saved successfully", newBrand });
+  } catch (error) {
+    console.error("Error during brand creation:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Endpoint to get all brands
+app.get('/brands', async (req, res) => {
+  try {
+    const brands = await Brand.find();
+    res.json(brands);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching brands', error });
+  }
+});
+
 
 // Protected route
 app.get("/protected-route", authenticateToken, (req, res) => {
@@ -563,10 +798,12 @@ app.post("/create-payment-intent", async (req, res) => {
 
   // Define the minimum amount allowed for your currency (e.g., 50 cents for USD)
   const minimumAmount = 50; // in cents
-  const currency = "inr"; // define your currency
+  const currency = "usd"; // define your currency
 
   if (totalAmount < minimumAmount / 100) {
-    return res.status(400).json({ message: `Amount must be at least ${minimumAmount / 100} ${currency}.` });
+    return res.status(400).json({
+      message: `Amount must be at least ${minimumAmount / 100} ${currency}.`,
+    });
   }
 
   try {
@@ -586,8 +823,8 @@ app.post("/create-payment-intent", async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating payment intent:", error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 });
-
-
