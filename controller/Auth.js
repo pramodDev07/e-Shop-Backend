@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { User } = require("../model/User");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
@@ -24,7 +25,7 @@ exports.createUser = async (req, res) => {
         // Generate JWT Token
         const token = jwt.sign(
           { userId: newUser._id, email: newUser.email },
-          "your_secret_key",
+          process.env.JWT_SECRET_KEY,
           { expiresIn: "30d" }
         );
         res.json({
@@ -55,7 +56,7 @@ exports.loginUser =  async (req, res) => {
         // Generate JWT Token
         const token = jwt.sign(
           { id: user._id, email: user.email },
-          "your_secret_key",
+          process.env.JWT_SECRET_KEY,
           { expiresIn: "30d" }
         );
         res.status(200).json({ id: user._id, role: user.role, token });

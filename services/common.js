@@ -13,7 +13,7 @@ exports.authenticateToken = (req, res, next) => {
 
   const tokenValue = token.split(" ")[1]; // Split the token properly
   // console.log('Authorization',tokenValue)
-  jwt.verify(tokenValue, "your_secret_key", (err, decodedToken) => {
+  jwt.verify(tokenValue, process.env.JWT_SECRET_KEY, (err, decodedToken) => {
     if (err) {
       return res.status(403).json({ message: "Invalid Token" });
     }
@@ -33,8 +33,7 @@ const transporter = nodemailer.createTransport({
   secure: false, // Use `true` for port 465, `false` for all other ports
   auth: {
     user: "elearning012345@gmail.com",
-    //   pass: process.env.MAIL_PASSWORD,
-    pass: "jytk cjhm xpps uxsq",
+    pass: process.env.MAIL_PASSWORD,
   },
 });
 

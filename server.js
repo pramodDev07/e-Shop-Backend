@@ -12,12 +12,10 @@ const cartRouters = require("./routes/Cart");
 const orderRouters = require("./routes/Order");
 const categoriesRouters = require("./routes/Category");
 const brandsRouters = require("./routes/Brand");
-const stripe = require("stripe")(
-  "sk_test_51OsUBIDflVYbhFY6omWgn8NOBTX5kB5lqmuP4h1N0QUME7BD4YHMNOjco9GE0E8LCeWoAnZcx2WbfpFvT5eaEXj60008PYCfol"
-);
+const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 const app = express();
-const endpointSecret = "whsec_kvAsWs6u3Pwn2RQ2Z5e4ui0BdOxsFYqU";
+const endpointSecret = process.env.ENDPOINT_SECRET;
 
 app.post(
   "/webhook",
@@ -56,15 +54,14 @@ app.post(
   }
 );
 
-const PORT = 3005;
 
 //data connection
 mongoose
-  .connect("mongodb://127.0.0.1:27017/ECommerceCopy")
+  .connect(process.env.MONGODB_URL)
   .then(() => {
     console.log("Database is connected");
-    app.listen(PORT, () => {
-      console.log(`server is running on port ${PORT}`);
+    app.listen(process.env.PORT, () => {
+      console.log(`server is running on port ${process.env.PORT}`);
     });
   })
   .catch((error) => {
