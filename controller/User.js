@@ -10,6 +10,7 @@ exports.fetchUserById = async (req, res) => {
         addresses: user.addresses,
         email: user.email,
         role: user.role,
+        gender: user.gender
       });
     } catch (err) {
       res.status(400).json(err);
@@ -29,12 +30,12 @@ exports.updateUser = async (req, res) => {
 
 exports.profileUpdate = async (req, res) => {
   const { id } = req.params;
-  const { name, email, bio } = req.body;
+  const { name, email, gender } = req.body;
 
   try {
     const updatedProfile = await User.findByIdAndUpdate(
       id,
-      { name, email, bio },
+      { name, email, gender },
       { new: true }
     );
     res.json(updatedProfile);

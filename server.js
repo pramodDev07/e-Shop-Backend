@@ -1,8 +1,9 @@
+require("dotenv").config();
 const bodyParser = require("body-parser");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-
+const path = require("path");
 
 const { authenticateToken } = require("./services/common");
 const productsRouters = require("./routes/Product");
@@ -12,6 +13,7 @@ const cartRouters = require("./routes/Cart");
 const orderRouters = require("./routes/Order");
 const categoriesRouters = require("./routes/Category");
 const brandsRouters = require("./routes/Brand");
+const { Product } = require("./model/Product");
 const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 const app = express();
@@ -54,36 +56,61 @@ app.post(
   }
 );
 
-
 //data connection
-mongoose
-  .connect(process.env.MONGODB_URL)
-  .then(() => {
-    console.log("Database is connected");
-    app.listen(process.env.PORT, () => {
-      console.log(`server is running on port ${process.env.PORT}`);
-    });
-  })
-  .catch((error) => {
+main().catch((err) => console.log(err));
+async function main() {
+  try {
+    await mongoose
+      .connect(process.env.MONGODB_URL, {
+        serverSelectionTimeoutMS: 5000, // Keeps trying to send operations for 5 seconds
+        socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      })
+      .then(() => {
+        console.log("Database is connected");
+        app.listen(process.env.PORT, () => {
+          console.log(`server is running on port ${process.env.PORT}`);
+        });
+      });
+  } catch (error) {
     console.error("Database is not connected", error);
-  });
+  }
+}
 
+app.use(express.static(path.resolve(__dirname,"build")))
 app.use(cors());
-
-
 app.use(
   cors({
     exposedHeaders: ["X-Total-Count"],
   })
 );
 app.use(bodyParser.json());
-app.use("/products",productsRouters.router)
-app.use("/auth",authRouters.router)
-app.use("/users",usersRouters.router)
-app.use("/cart",cartRouters.router)
-app.use("/orders",orderRouters.router)
-app.use("/categories",categoriesRouters.router)
-app.use("/brands",brandsRouters.router)
+app.use("/products", productsRouters.router);
+app.use("/auth", authRouters.router);
+app.use("/users", usersRouters.router);
+app.use("/cart", cartRouters.router);
+app.use("/orders", orderRouters.router);
+app.use("/categories", categoriesRouters.router);
+app.use("/brands", brandsRouters.router);
+
+app.get("/search", async (req, res) => {
+  try {
+    const query = req.query.query || ""; // get the search query
+
+    const items = await Product.find({
+      $or: [
+        { category: { $regex: query, $options: "i" } },
+        { title: { $regex: query, $options: "i" } },
+        { brand: { $regex: query, $options: "i" } },
+        { price: isNaN(Number(query)) ? undefined : Number(query) }, // check if the query is a number
+        { description: { $regex: query, $options: "i" } },
+      ].filter(Boolean), // remove undefined entries
+    });
+
+    res.json(items);
+  } catch (error) {
+    res.status(500).send("Server Error");
+  }
+});
 
 // Protected route
 app.get("/protected-route", authenticateToken, (req, res) => {

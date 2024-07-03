@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 const { sendMail } = require("../services/common");
 
 exports.createUser = async (req, res) => {
-    const { name, email, password, bio } = req.body;
+    const { name, email, password, gender } = req.body;
   
     try {
       const existingUser = await User.findOne({ email });
@@ -19,7 +19,7 @@ exports.createUser = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
   
         // Create new user
-        const newUser = new User({ name, email, bio, password: hashedPassword });
+        const newUser = new User({ name, email, gender, password: hashedPassword });
         await newUser.save();
   
         // Generate JWT Token

@@ -1,4 +1,5 @@
 const { Order } = require("../model/Order");
+const { Product } = require("../model/Product");
 const { User } = require("../model/User");
 const { invoiceTemplate, sendMail } = require("../services/common");
 
@@ -15,8 +16,14 @@ exports.fetchAllOrders = async (req, res) => {
 
   exports.createOrder = async (req, res) => {
     const order = new Order(req.body);
+
+    for(let item of order.items){
+      const product = await Product.findOne({_id: item.product._id})
+      product.$inc('stock', -1*item.quantity)
+      await product.save();
+    }
+
     try {
-      
       const doc = await order.save();
       const user = await User.findById(order.user);
       // console.log(user.email);

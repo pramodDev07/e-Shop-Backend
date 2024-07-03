@@ -6,7 +6,7 @@ const userSchema = new Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, default: "user" },
-    bio: String,
+    gender: String,
     addresses: { type: [Schema.Types.Mixed] },
     resetToken: String,
     resetTokenExpiry: Date,

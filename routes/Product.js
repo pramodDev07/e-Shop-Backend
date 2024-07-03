@@ -1,5 +1,6 @@
 const express = require('express')
-const { fetchAllProducts, createProduct, fetchProductById, updateProduct } = require('../controller/Product')
+const { fetchAllProducts, createProduct, fetchProductById, updateProduct } = require('../controller/Product');
+const { Brand } = require('../model/Brand');
 
 const router = express.Router()
 
@@ -8,5 +9,8 @@ router
 .get('/',fetchAllProducts)
 .get('/:id',fetchProductById)
 .patch('/:id',updateProduct)
+
+   
+
 
 exports.router = router
