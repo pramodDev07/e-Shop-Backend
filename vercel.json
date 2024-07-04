@@ -9,10 +9,10 @@
             "use": "@vercel/static"
         }
     ],
-    "rewrites": [
+    "routes": [
         {
             "source": "/(.*)",
-            "destination": "build/"
+            "destination": "index.js"
         }
     ]
 }
