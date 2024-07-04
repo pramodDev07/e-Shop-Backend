@@ -85,6 +85,7 @@ app.use(
   })
 );
 app.use(bodyParser.json());
+app.use(express.json()); // to parse req.body
 app.use("/products", productsRouters.router);
 app.use("/auth", authRouters.router);
 app.use("/users", usersRouters.router);
