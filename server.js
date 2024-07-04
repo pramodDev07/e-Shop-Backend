@@ -14,6 +14,7 @@ const orderRouters = require("./routes/Order");
 const categoriesRouters = require("./routes/Category");
 const brandsRouters = require("./routes/Brand");
 const { Product } = require("./model/Product");
+const { Order } = require("./model/Order");
 const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 const app = express();
@@ -91,6 +92,12 @@ app.use("/cart", cartRouters.router);
 app.use("/orders", orderRouters.router);
 app.use("/categories", categoriesRouters.router);
 app.use("/brands", brandsRouters.router);
+
+// this line we added to make react router work in case of other routes dosent match
+app.get("*", (req, res) =>
+  res.sendFile(path.resolve("build", "index.html"))
+);
+
 
 app.get("/search", async (req, res) => {
   try {
