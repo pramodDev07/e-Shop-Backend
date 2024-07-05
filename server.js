@@ -148,6 +148,10 @@ app.post("/create-payment-intent", async (req, res) => {
   }
 });
 
+server.get("/", (req, res) => {
+  res.json({ status: "success" });
+});
+
 
 //data connection
 main().catch((err) => console.log(err));
