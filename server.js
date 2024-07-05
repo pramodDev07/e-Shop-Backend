@@ -57,25 +57,6 @@ app.post(
   }
 );
 // ###########################33333
-//data connection
-main().catch((err) => console.log(err));
-async function main() {
-  try {
-    await mongoose
-      .connect(process.env.MONGODB_URL, {
-        serverSelectionTimeoutMS: 5000, // Keeps trying to send operations for 5 seconds
-        socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      })
-      .then(() => {
-        console.log("Database is connected");
-        app.listen(process.env.PORT, () => {
-          console.log(`server is running on port ${process.env.PORT}`);
-        });
-      });
-  } catch (error) {
-    console.error("Database is not connected", error);
-  }
-}
 
 app.use(express.static(path.resolve(__dirname,"build")))
 app.use(cors());
@@ -166,3 +147,24 @@ app.post("/create-payment-intent", async (req, res) => {
       .json({ message: "Internal Server Error", error: error.message });
   }
 });
+
+
+//data connection
+main().catch((err) => console.log(err));
+async function main() {
+  try {
+    await mongoose
+      .connect(process.env.MONGODB_URL, {
+        serverSelectionTimeoutMS: 5000, // Keeps trying to send operations for 5 seconds
+        socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      })
+      .then(() => {
+        console.log("Database is connected");
+        app.listen(process.env.PORT, () => {
+          console.log(`server is running on port ${process.env.PORT}`);
+        });
+      });
+  } catch (error) {
+    console.error("Database is not connected", error);
+  }
+}
