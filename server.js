@@ -103,7 +103,7 @@ app.get("*", (req, res) =>
   res.sendFile(path.resolve("build", "index.html"))
 );
 
-
+// HHHHHHHHHHH
 // Protected route
 app.get("/protected-route", authenticateToken, (req, res) => {
   // Access user information from req.user
