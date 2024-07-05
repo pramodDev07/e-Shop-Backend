@@ -99,7 +99,7 @@ app.get("/search", async (req, res) => {
 });
 
 // this line we added to make react router work in case of other routes dosent match
-app.get("*", (req, res) =>
+app.get("/*", (req, res) =>
   res.sendFile(path.resolve("build", "index.html"))
 );
 
@@ -148,9 +148,9 @@ app.post("/create-payment-intent", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.json({ status: "success" });
-});
+// app.get("/", (req, res) => {
+//   res.json({ status: "success" });
+// });
 
 
 //data connection
