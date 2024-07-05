@@ -94,10 +94,7 @@ app.use("/orders", orderRouters.router);
 app.use("/categories", categoriesRouters.router);
 app.use("/brands", brandsRouters.router);
 
-// this line we added to make react router work in case of other routes dosent match
-app.get("*", (req, res) =>
-  res.sendFile(path.resolve("build", "index.html"))
-);
+
 
 
 app.get("/search", async (req, res) => {
@@ -119,6 +116,11 @@ app.get("/search", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+
+// this line we added to make react router work in case of other routes dosent match
+app.get("*", (req, res) =>
+  res.sendFile(path.resolve("build", "index.html"))
+);
 
 // Protected route
 app.get("/protected-route", authenticateToken, (req, res) => {
