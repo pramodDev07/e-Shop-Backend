@@ -56,7 +56,7 @@ app.post(
     response.send();
   }
 );
-// ###########################33333
+
 //data connection
 main().catch((err) => console.log(err));
 async function main() {
@@ -85,7 +85,7 @@ app.use(
   })
 );
 app.use(bodyParser.json());
-app.use(express.json()); // to parse req.body
+// app.use(express.json()); // to parse req.body
 app.use("/products", productsRouters.router);
 app.use("/auth", authRouters.router);
 app.use("/users", usersRouters.router);
