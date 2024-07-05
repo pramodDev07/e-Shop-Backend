@@ -56,7 +56,7 @@ app.post(
     response.send();
   }
 );
-
+// ###########################33333
 //data connection
 main().catch((err) => console.log(err));
 async function main() {
@@ -96,7 +96,7 @@ app.use("/brands", brandsRouters.router);
 
 // this line we added to make react router work in case of other routes dosent match
 app.get("*", (req, res) =>
-  res.sendFile(path.resolve("build"))
+  res.sendFile(path.resolve("build", "index.html"))
 );
 
 
