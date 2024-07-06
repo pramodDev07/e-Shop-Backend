@@ -3,13 +3,6 @@ const bodyParser = require("body-parser");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const corsConfig = {
-  origin:'*',
-  Credential:true,
-  methods:["GET","POST","PUT","DELETE","PATCH"]
-}
-app.options("",cors(corsConfig))
-app.use(cors(corsConfig))
 const path = require("path");
 
 const { authenticateToken } = require("./services/common");
@@ -28,6 +21,15 @@ const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 const app = express();
 const endpointSecret = process.env.ENDPOINT_SECRET;
 
+const corsConfig = {
+  origin:'*',
+  Credential:true,
+  methods:["GET","POST","PUT","DELETE","PATCH"]
+}
+app.options("",cors(corsConfig))
+app.use(cors(corsConfig))
+app.use(express.static(path.resolve(__dirname,"build")))
+app.use(bodyParser.json());
 app.post(
   "/webhook",
   express.raw({ type: "application/json" }),
@@ -66,14 +68,13 @@ app.post(
 );
 // ###########################33333
 
-app.use(express.static(path.resolve(__dirname,"build")))
 app.use(cors());
 app.use(
   cors({
     exposedHeaders: ["X-Total-Count"],
   })
 );
-app.use(bodyParser.json());
+
 // app.use(express.json()); // to parse req.body
 app.use("/products", productsRouters.router);
 app.use("/auth", authRouters.router);
