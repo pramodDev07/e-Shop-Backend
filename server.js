@@ -58,7 +58,7 @@ app.post(
 );
 // ###########################33333
 
-app.use(express.static(path.resolve(__dirname,"build")))
+app.use(express.static(path.join(__dirname,"build")))
 app.use(cors());
 app.use(
   cors({
@@ -100,7 +100,7 @@ app.get("/search", async (req, res) => {
 
 // this line we added to make react router work in case of other routes dosent match
 app.get("*", (req, res) =>
-  res.sendFile(path.resolve("build"))
+  res.sendFile(path.join("build", "index.html"))
 );
 
 // HHHHHHHHHHH
