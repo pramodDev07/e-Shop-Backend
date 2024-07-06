@@ -8,6 +8,7 @@ const corsConfig = {
   Credential:true,
   methods:["GET","POST","PUT","DELETE","PATCH"]
 }
+app.options("",cors(corsConfig))
 app.use(cors(corsConfig))
 const path = require("path");
 
