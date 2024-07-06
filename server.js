@@ -59,7 +59,7 @@ app.post(
     response.send();
   }
 );
-
+app.use(cors());
 app.use(
   cors({
     exposedHeaders: ["X-Total-Count"],
