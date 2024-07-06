@@ -2,8 +2,8 @@ require("dotenv").config();
 const bodyParser = require("body-parser");
 const express = require("express");
 const mongoose = require("mongoose");
-const path = require("path");
 const cors = require("cors");
+const path = require("path");
 
 const { authenticateToken } = require("./services/common");
 const productsRouters = require("./routes/Product");
@@ -58,7 +58,7 @@ app.post(
 );
 // ###########################33333
 
-app.use(express.static(path.resolve(__dirname, "build")));
+app.use(express.static(path.resolve(__dirname,"build")))
 app.use(cors());
 app.use(
   cors({
@@ -74,6 +74,9 @@ app.use("/cart", cartRouters.router);
 app.use("/orders", orderRouters.router);
 app.use("/categories", categoriesRouters.router);
 app.use("/brands", brandsRouters.router);
+
+
+
 
 app.get("/search", async (req, res) => {
   try {
@@ -96,9 +99,11 @@ app.get("/search", async (req, res) => {
 });
 
 // this line we added to make react router work in case of other routes dosent match
-app.get("*", (req, res) => res.sendFile(path.resolve("build", "index.html")));
+app.get("*", (req, res) =>
+  res.sendFile(path.resolve("build", "index.html"))
+);
 
-
+// HHHHHHHHHHH
 // Protected route
 app.get("/protected-route", authenticateToken, (req, res) => {
   // Access user information from req.user
@@ -144,12 +149,13 @@ app.post("/create-payment-intent", async (req, res) => {
   }
 });
 
-// app.get("/", (req, res) => {
-//   res.json({ status: "success" });
-// });
+app.get("/", (req, res) => {
+  res.json({ status: "success" });
+});
+
 
 //data connection
-
+main().catch((err) => console.log(err));
 async function main() {
   try {
     await mongoose
@@ -167,5 +173,3 @@ async function main() {
     console.error("Database is not connected", error);
   }
 }
-
-main().catch((err) => console.log(err));
