@@ -106,7 +106,7 @@ app.get("/search", async (req, res) => {
 
 // this line we added to make react router work in case of other routes dosent match
 app.get("*", (req, res) =>
-  res.sendFile(path.resolve("build", "index.html"))
+  res.sendFile(path.resolve(__dirname,"build", "index.html"))
 );
 
 // Protected route
