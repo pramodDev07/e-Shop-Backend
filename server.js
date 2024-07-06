@@ -19,14 +19,14 @@ const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 const app = express();
 
-const corsConfig = {
-  origin: "*",
-  Credential: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-};
+// const corsConfig = {
+//   origin: "*",
+//   Credential: true,
+//   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+// };
 app.use(cors());
-app.options("", cors(corsConfig));
-app.use(cors(corsConfig));
+// app.options("", cors(corsConfig));
+// app.use(cors(corsConfig));
 
 const endpointSecret = process.env.ENDPOINT_SECRET;
 app.post(
@@ -104,7 +104,7 @@ app.get("/search", async (req, res) => {
 
 // this line we added to make react router work in case of other routes dosent match
 app.get("*", (req, res) =>
-  res.sendFile(path.resolve(__dirname, "build", "index.html"))
+  res.sendFile(path.resolve("build", "index.html"))
 );
 
 // Protected route
