@@ -149,7 +149,7 @@ app.post("/create-payment-intent", async (req, res) => {
 // });
 
 //data connection
-main().catch((err) => console.log(err));
+
 async function main() {
   try {
     await mongoose
@@ -167,3 +167,5 @@ async function main() {
     console.error("Database is not connected", error);
   }
 }
+
+main().catch((err) => console.log(err));
