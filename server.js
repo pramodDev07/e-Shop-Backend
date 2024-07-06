@@ -58,14 +58,11 @@ app.post(
     response.send();
   }
 );
-
 app.use(
   cors({
     exposedHeaders: ["X-Total-Count"],
   })
 );
-
-// app.use(express.json()); // to parse req.body
 app.use("/products", productsRouters.router);
 app.use("/auth", authRouters.router);
 app.use("/users", usersRouters.router);
@@ -73,9 +70,6 @@ app.use("/cart", cartRouters.router);
 app.use("/orders", orderRouters.router);
 app.use("/categories", categoriesRouters.router);
 app.use("/brands", brandsRouters.router);
-
-
-
 
 app.get("/search", async (req, res) => {
   try {
@@ -102,7 +96,6 @@ app.get("*", (req, res) =>
   res.sendFile(path.resolve("build", "index.html"))
 );
 
-// HHHHHHHHHHH
 // Protected route
 app.get("/protected-route", authenticateToken, (req, res) => {
   // Access user information from req.user
@@ -148,12 +141,8 @@ app.post("/create-payment-intent", async (req, res) => {
   }
 });
 
-// app.get("/", (req, res) => {
-//   res.json({ status: "success" });
-// });
-
 const port = process.env.PORT || 3005
-//data connection
+//mongo atlas connection
 main().catch((err) => console.log(err));
 async function main() {
   try {
