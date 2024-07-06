@@ -25,6 +25,7 @@ const corsConfig = {
   Credential:true,
   methods:["GET","POST","PUT","DELETE","PATCH"]
 }
+app.use(cors());
 app.options("",cors(corsConfig))
 app.use(cors(corsConfig))
 app.use(express.static(path.resolve(__dirname,"build")))
@@ -67,7 +68,7 @@ app.post(
 );
 // ###########################33333
 
-app.use(cors());
+
 app.use(
   cors({
     exposedHeaders: ["X-Total-Count"],
