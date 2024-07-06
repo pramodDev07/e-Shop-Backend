@@ -3,6 +3,12 @@ const bodyParser = require("body-parser");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const corsConfig = {
+  origin:'*',
+  Credential:true,
+  methods:["GET","POST","PUT","DELETE","PATCH"]
+}
+app.use(cors(corsConfig))
 const path = require("path");
 
 const { authenticateToken } = require("./services/common");
@@ -15,6 +21,7 @@ const categoriesRouters = require("./routes/Category");
 const brandsRouters = require("./routes/Brand");
 const { Product } = require("./model/Product");
 const { Order } = require("./model/Order");
+const { METHODS } = require("http");
 const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 const app = express();
@@ -153,7 +160,7 @@ app.post("/create-payment-intent", async (req, res) => {
 //   res.json({ status: "success" });
 // });
 
-
+const port = process.env.PORT || 3005
 //data connection
 main().catch((err) => console.log(err));
 async function main() {
@@ -165,8 +172,8 @@ async function main() {
       })
       .then(() => {
         console.log("Database is connected");
-        app.listen(process.env.PORT, () => {
-          console.log(`server is running on port ${process.env.PORT}`);
+        app.listen(port, () => {
+          console.log(`server is running on port ${port}`);
         });
       });
   } catch (error) {
