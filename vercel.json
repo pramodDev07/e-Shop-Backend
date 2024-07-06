@@ -13,7 +13,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "dest": "/",
+      "dest": "/server",
       "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
     }
   ]
