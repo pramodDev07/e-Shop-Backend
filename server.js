@@ -1,10 +1,9 @@
 require("dotenv").config();
 const bodyParser = require("body-parser");
 const express = require("express");
-const mongoose = require('mongoose')
+const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
-
 
 const { authenticateToken } = require("./services/common");
 const productsRouters = require("./routes/Product");
@@ -20,14 +19,13 @@ const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 const app = express();
 const corsConfig = {
-  origin:'*',
-  Credential:true,
-  methods:["GET","POST","PUT","DELETE","PATCH"]
-}
+  origin: "*",
+  Credential: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+};
 app.use(cors());
-app.options("",cors(corsConfig))
-app.use(cors(corsConfig))
-
+app.options("", cors(corsConfig));
+app.use(cors(corsConfig));
 
 const endpointSecret = process.env.ENDPOINT_SECRET;
 app.post(
@@ -67,8 +65,7 @@ app.post(
   }
 );
 
-
-app.use(express.static(path.resolve(__dirname,"build")))
+app.use(express.static(path.resolve(__dirname, "build")));
 app.use(cors());
 app.use(
   cors({
@@ -106,7 +103,7 @@ app.get("/search", async (req, res) => {
 
 // this line we added to make react router work in case of other routes dosent match
 app.get("*", (req, res) =>
-  res.sendFile(path.resolve(__dirname,"build", "index.html"))
+  res.sendFile(path.resolve(__dirname, "build", "index.html"))
 );
 
 // Protected route
@@ -154,7 +151,7 @@ app.post("/create-payment-intent", async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 3005
+const port = process.env.PORT || 3005;
 //mongo atlas connection
 main().catch((err) => console.log(err));
 async function main() {
