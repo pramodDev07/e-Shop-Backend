@@ -58,7 +58,7 @@ app.post(
 );
 // ###########################33333
 
-app.use(express.static(path.join(__dirname,"build")))
+app.use(express.static(path.resolve(__dirname,"build")))
 app.use(cors());
 app.use(
   cors({
@@ -100,7 +100,7 @@ app.get("/search", async (req, res) => {
 
 // this line we added to make react router work in case of other routes dosent match
 app.get("*", (req, res) =>
-  res.sendFile(path.join(__dirname,"build", "index.html"))
+  res.sendFile(path.resolve("build", "index.html"))
 );
 
 // HHHHHHHHHHH
@@ -153,7 +153,7 @@ app.post("/create-payment-intent", async (req, res) => {
 //   res.json({ status: "success" });
 // });
 
-PORT=3005
+
 //data connection
 main().catch((err) => console.log(err));
 async function main() {
@@ -165,8 +165,8 @@ async function main() {
       })
       .then(() => {
         console.log("Database is connected");
-        app.listen(PORT, () => {
-          console.log(`server is running on port ${PORT}`);
+        app.listen(process.env.PORT, () => {
+          console.log(`server is running on port ${process.env.PORT}`);
         });
       });
   } catch (error) {
