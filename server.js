@@ -2,8 +2,8 @@ require("dotenv").config();
 const bodyParser = require("body-parser");
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const path = require("path");
+const cors = require("cors");
 
 const { authenticateToken } = require("./services/common");
 const productsRouters = require("./routes/Product");
@@ -58,7 +58,7 @@ app.post(
 );
 // ###########################33333
 
-app.use(express.static(path.join(__dirname,"build")))
+app.use(express.static(path.resolve(__dirname, "build")));
 app.use(cors());
 app.use(
   cors({
@@ -74,9 +74,6 @@ app.use("/cart", cartRouters.router);
 app.use("/orders", orderRouters.router);
 app.use("/categories", categoriesRouters.router);
 app.use("/brands", brandsRouters.router);
-
-
-
 
 app.get("/search", async (req, res) => {
   try {
@@ -99,9 +96,7 @@ app.get("/search", async (req, res) => {
 });
 
 // this line we added to make react router work in case of other routes dosent match
-app.get("*", (req, res) =>
-  res.sendFile(path.join("build", "index.html"))
-);
+app.get("*", (req, res) => res.sendFile(path.resolve(__dirname, "build", "index.html")));
 
 // HHHHHHHHHHH
 // Protected route
@@ -152,7 +147,6 @@ app.post("/create-payment-intent", async (req, res) => {
 // app.get("/", (req, res) => {
 //   res.json({ status: "success" });
 // });
-
 
 //data connection
 main().catch((err) => console.log(err));
