@@ -19,17 +19,17 @@ const { Order } = require("./model/Order");
 const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 const app = express();
+const corsConfig = {
+  origin:'*',
+  Credential:true,
+  methods:["GET","POST","PUT","DELETE","PATCH"]
+}
+app.use(cors());
+app.options("",cors(corsConfig))
+app.use(cors(corsConfig))
+
+
 const endpointSecret = process.env.ENDPOINT_SECRET;
-// const corsConfig = {
-//   origin:'*',
-//   Credential:true,
-//   methods:["GET","POST","PUT","DELETE","PATCH"]
-// }
-// app.use(cors());
-// app.options("",cors(corsConfig))
-// app.use(cors(corsConfig))
-app.use(express.static(path.resolve(__dirname,"build")))
-app.use(bodyParser.json());
 app.post(
   "/webhook",
   express.raw({ type: "application/json" }),
@@ -66,12 +66,16 @@ app.post(
     response.send();
   }
 );
+
+
+app.use(express.static(path.resolve(__dirname,"build")))
 app.use(cors());
 app.use(
   cors({
     exposedHeaders: ["X-Total-Count"],
   })
 );
+app.use(bodyParser.json());
 app.use("/products", productsRouters.router);
 app.use("/auth", authRouters.router);
 app.use("/users", usersRouters.router);
