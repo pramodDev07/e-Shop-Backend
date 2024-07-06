@@ -153,7 +153,7 @@ app.post("/create-payment-intent", async (req, res) => {
 //   res.json({ status: "success" });
 // });
 
-
+PORT=3005
 //data connection
 main().catch((err) => console.log(err));
 async function main() {
@@ -165,8 +165,8 @@ async function main() {
       })
       .then(() => {
         console.log("Database is connected");
-        app.listen(process.env.PORT, () => {
-          console.log(`server is running on port ${process.env.PORT}`);
+        app.listen(PORT, () => {
+          console.log(`server is running on port ${PORT}`);
         });
       });
   } catch (error) {
