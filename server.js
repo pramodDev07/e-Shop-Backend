@@ -15,7 +15,6 @@ const categoriesRouters = require("./routes/Category");
 const brandsRouters = require("./routes/Brand");
 const { Product } = require("./model/Product");
 const { Order } = require("./model/Order");
-const { METHODS } = require("http");
 const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 const app = express();
