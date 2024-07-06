@@ -12,8 +12,8 @@
     ],
     "rewrites": [
       {
-        "source": "/(.*)",
-        "destination": "/server.js"
+        "src": "/(.+)",
+        "dest": "build/$1"
       }
     ]
   }
