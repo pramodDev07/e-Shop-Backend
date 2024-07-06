@@ -18,6 +18,7 @@ const { Order } = require("./model/Order");
 const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 const app = express();
+
 const corsConfig = {
   origin: "*",
   Credential: true,
