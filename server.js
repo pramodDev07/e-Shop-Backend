@@ -103,7 +103,7 @@ app.get("/search", async (req, res) => {
   }
 });
 
-// this line we added to make react router work in case of other routes dosent match
+// this line we added to make react router work in case of other routes dose'nt match
 app.get("*", (req, res) =>
   res.sendFile(path.resolve("build", "index.html"))
 );
@@ -141,6 +141,7 @@ app.post("/create-payment-intent", async (req, res) => {
         orderId,
       },
     });
+    
 
     res.send({
       clientSecret: paymentIntent.client_secret,

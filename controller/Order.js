@@ -80,6 +80,7 @@ exports.fetchAllOrders = async (req, res) => {
 
   exports.fetchSuccessOrders =  async (req, res) => {
     const id = req.params.id;
+    console.log(id,"id")
     try {
       const orders = await Order.find({ _id: id });
       res.status(200).json(orders);
