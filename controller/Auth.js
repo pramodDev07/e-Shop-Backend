@@ -1,7 +1,6 @@
 require("dotenv").config();
 const { User } = require("../model/User");
 const crypto = require("crypto");
-// const bcrypt = require("bcrypt");
 const bcrypt = require('bcryptjs');
 const jwt = require("jsonwebtoken");
 const { sendMail } = require("../services/common");
@@ -13,7 +12,6 @@ exports.createUser = async (req, res) => {
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         console.log("User Already Registered");
-        // res.json({ message: "User Already Registered" });
         return res.status(409).json({ message: "User Already Registered" });
       } else {
         // Hash the password
@@ -114,7 +112,6 @@ exports.loginUser =  async (req, res) => {
 
   exports.resetPassword = async (req, res) => {
     const { token } = req.params;
-    // console.log(token)
     const { password } = req.body;
     try {
       const user = await User.findOne({

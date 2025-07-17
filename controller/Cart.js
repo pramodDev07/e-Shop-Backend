@@ -47,7 +47,6 @@ exports.fetchCartByUser = async (req, res) => {
         { quantity },
         { new: true }
       );
-      // const result = await cart.populate("product");
       res.status(200).json(cartItem);
     } catch (error) {
       res.status(500).json({ message: "Error updating quantity", error });
@@ -74,12 +73,8 @@ exports.fetchCartByUser = async (req, res) => {
 
   exports.clearCartItem = async (req, res) => {
     const { id } = req.params;
-    // console.log(id)
     try {
       const clearCart = await CartItem.deleteMany({ userId: id });
-      // const userId = req.body.userId; // Ensure you have the user ID to identify the user's cart
-  
-      // await Cart.deleteMany({ userId });
       if (clearCart) {
         res.status(200).json({ message: "Cart cleared successfully" });
       } else {

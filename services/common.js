@@ -4,7 +4,6 @@ const nodemailer = require("nodemailer");
 // middleware for authentication
 exports.authenticateToken = (req, res, next) => {
   const token = req.header("Authorization");
-  // console.log('Authorization',token)
   if (!token) {
     return res
       .status(401)
@@ -12,7 +11,6 @@ exports.authenticateToken = (req, res, next) => {
   }
 
   const tokenValue = token.split(" ")[1]; // Split the token properly
-  // console.log('Authorization',tokenValue)
   jwt.verify(tokenValue, process.env.JWT_SECRET_KEY, (err, decodedToken) => {
     if (err) {
       return res.status(403).json({ message: "Invalid Token" });

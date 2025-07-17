@@ -5,7 +5,6 @@ exports.createProduct =  async (req, res) => {
   
     try {
       const newProduct = await Product.findOne({ title: product.title });
-      // console.log('newProduct',newProduct)
       if (newProduct) {
         return res.status(409).json({ message: "Product Already Exists" });
       }
@@ -14,7 +13,6 @@ exports.createProduct =  async (req, res) => {
       newProducts.discountPrice = Math.round(
         product.price * (1 - product.discountPercentage / 100)
       );
-      console.log("newProducts", newProducts);
       await newProducts.save();
       return res.status(201).json({ message: "Product Saved Successfully" });
     } catch (error) {
@@ -70,10 +68,8 @@ exports.fetchAllProducts =  async (req, res) => {
 
   exports.fetchProductById =  async (req, res) => {
     const id = req.params.id;
-    // console.log(id);
     try {
       const product = await Product.find({ _id: id });
-      // console.log(product)
       res.json({ product });
     } catch (error) {
       console.error(error);

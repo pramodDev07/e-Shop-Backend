@@ -26,7 +26,6 @@ exports.fetchAllOrders = async (req, res) => {
     try {
       const doc = await order.save();
       const user = await User.findById(order.user);
-      // console.log(user.email);
        // Await the sendMail function and handle errors
        try {
         await sendMail({
@@ -38,9 +37,7 @@ exports.fetchAllOrders = async (req, res) => {
         console.error('Error sending email:', mailError);
         // Optionally, you can choose to handle this case differently
       }
-        // console.log("dddd",doc)
       res.status(201).json(doc);
-      // res.status(201).json({message:"order"});
     } catch (err) {
       res.status(400).json(err);
     }
@@ -48,8 +45,6 @@ exports.fetchAllOrders = async (req, res) => {
 
   exports.updateOrder = async (req, res) => {
     const { id } = req.params;
-    // console.log("Updating order with ID:", id);
-  
     try {
       const updatedOrder = await Order.findByIdAndUpdate(id, req.body, {
         new: true,
@@ -58,8 +53,6 @@ exports.fetchAllOrders = async (req, res) => {
       if (!updatedOrder) {
         return res.status(404).json({ message: "Order not found" });
       }
-  
-      // console.log("Order updated successfully:", updatedOrder);
       res.json(updatedOrder);
     } catch (error) {
       console.error("Error updating order:", error);
@@ -80,7 +73,6 @@ exports.fetchAllOrders = async (req, res) => {
 
   exports.fetchSuccessOrders =  async (req, res) => {
     const id = req.params.id;
-    console.log(id,"id")
     try {
       const orders = await Order.find({ _id: id });
       res.status(200).json(orders);
